@@ -18,6 +18,7 @@
 #include <thread>
 #include <vector>
 
+#include "http_server.h"
 #include "json_loader.h"
 #include "request_handler.h"
 

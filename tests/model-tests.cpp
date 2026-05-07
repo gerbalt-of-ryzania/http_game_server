@@ -5,8 +5,8 @@
 #include <filesystem>
 #include <fstream>
 
-#include "../src/json_loader.h"
-#include "../src/model.h"
+#include "json_loader.h"
+#include "model.h"
 
 namespace {
 
