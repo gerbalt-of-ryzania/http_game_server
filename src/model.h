@@ -60,19 +60,13 @@ class Road {
         explicit VerticalTag() = default;
     };
 
-public:
+   public:
     constexpr static HorizontalTag HORIZONTAL{};
     constexpr static VerticalTag VERTICAL{};
 
-    Road(HorizontalTag, Point start, Coord end_x) noexcept
-        : start_{start}
-        , end_{end_x, start.y} {
-    }
+    Road(HorizontalTag, Point start, Coord end_x) noexcept : start_{start}, end_{end_x, start.y} {}
 
-    Road(VerticalTag, Point start, Coord end_y) noexcept
-        : start_{start}
-        , end_{start.x, end_y} {
-    }
+    Road(VerticalTag, Point start, Coord end_y) noexcept : start_{start}, end_{start.x, end_y} {}
 
     bool IsHorizontal() const noexcept {
         return start_.y == end_.y;
@@ -90,34 +84,28 @@ public:
         return end_;
     }
 
-private:
+   private:
     Point start_;
     Point end_;
 };
 
 class Building {
-public:
-    explicit Building(Rectangle bounds) noexcept
-        : bounds_{bounds} {
-    }
+   public:
+    explicit Building(Rectangle bounds) noexcept : bounds_{bounds} {}
 
     const Rectangle& GetBounds() const noexcept {
         return bounds_;
     }
 
-private:
+   private:
     Rectangle bounds_;
 };
 
 class Office {
-public:
+   public:
     using Id = util::Tagged<std::string, Office>;
 
-    Office(Id id, Point position, Offset offset) noexcept
-        : id_{std::move(id)}
-        , position_{position}
-        , offset_{offset} {
-    }
+    Office(Id id, Point position, Offset offset) noexcept : id_{std::move(id)}, position_{position}, offset_{offset} {}
 
     const Id& GetId() const noexcept {
         return id_;
@@ -131,32 +119,27 @@ public:
         return offset_;
     }
 
-private:
+   private:
     Id id_;
     Point position_;
     Offset offset_;
 };
 
 class Map {
-public:
+   public:
     using Id = util::Tagged<std::string, Map>;
     using Roads = std::vector<Road>;
     using Buildings = std::vector<Building>;
     using Offices = std::vector<Office>;
 
-    Map(Id id,
-        std::string name,
-        double dog_speed,
-        size_t loot_types_count = 0,
-        size_t bag_capacity = 3,
+    Map(Id id, std::string name, double dog_speed, size_t loot_types_count = 0, size_t bag_capacity = 3,
         std::vector<size_t> loot_values = {}) noexcept
-        : id_(std::move(id))
-        , name_(std::move(name))
-        , dog_speed_{dog_speed}
-        , loot_types_count_{loot_types_count}
-        , bag_capacity_{bag_capacity}
-        , loot_values_(std::move(loot_values)) {
-    }
+        : id_(std::move(id)),
+          name_(std::move(name)),
+          dog_speed_{dog_speed},
+          loot_types_count_{loot_types_count},
+          bag_capacity_{bag_capacity},
+          loot_values_(std::move(loot_values)) {}
 
     const Id& GetId() const noexcept {
         return id_;
@@ -204,7 +187,7 @@ public:
 
     void AddOffice(Office office);
 
-private:
+   private:
     using OfficeIdToIndex = std::unordered_map<Office::Id, size_t, util::TaggedHasher<Office::Id>>;
 
     Id id_;
@@ -221,7 +204,7 @@ private:
 };
 
 class Game {
-public:
+   public:
     using Maps = std::vector<Map>;
     using PlayerId = std::uint32_t;
     using LostObjectId = std::uint32_t;
@@ -280,8 +263,7 @@ public:
     };
 
     explicit Game(postgres::RecordsRepository* records_repository = nullptr)
-        : records_repository_(records_repository) {
-    }
+        : records_repository_(records_repository) {}
 
     void SetRecordsRepository(postgres::RecordsRepository* records_repository) noexcept {
         records_repository_ = records_repository;
@@ -320,7 +302,7 @@ public:
     std::vector<const Player*> GetPlayersByMap(const Map::Id& map_id) const;
     std::vector<const LostObject*> GetLostObjectsByMap(const Map::Id& map_id) const;
 
-private:
+   private:
     static Vec2 SpawnAtFirstRoadStart(const Map& map);
     Vec2 SpawnAtRandomRoadPoint(const Map& map);
     Vec2 GenerateRandomRoadPosition(const Map& map);

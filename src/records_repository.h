@@ -14,17 +14,14 @@ struct RetiredPlayerRecord {
 };
 
 class RecordsRepository {
-public:
+   public:
     explicit RecordsRepository(std::string db_url);
 
     void Save(const RetiredPlayerRecord& record);
 
-    std::vector<RetiredPlayerRecord> GetRecords(
-        std::size_t start,
-        std::size_t max_items
-    ) const;
+    std::vector<RetiredPlayerRecord> GetRecords(std::size_t start, std::size_t max_items) const;
 
-private:
+   private:
     void InitDatabase();
 
     std::string db_url_;

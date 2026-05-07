@@ -5,6 +5,15 @@ configuration file, serves the browser client from `static/`, exposes a REST API
 state and movement, generates loot, handles collection/return scoring, and persists retired
 player records in PostgreSQL.
 
+## Highlights
+
+- Asynchronous HTTP server in C++20 using Boost.Asio/Beast
+- REST API with token-based player sessions
+- PostgreSQL persistence with indexed leaderboard queries
+- Dockerized deployment
+- Unit and integration tests
+- CI pipeline with build/test/static analysis
+
 ## Features
 
 - HTTP server built on Boost.Asio/Boost.Beast.
@@ -118,7 +127,7 @@ retired_players(id, name, score, play_time_ms)
 On Windows from `build/`:
 
 ```powershell
-.\bin\game_server.exe --config-file ..\data\config.json --www-root ..\static
+.\game_server --config-file ..\data\config.json --www-root ..\static
 ```
 
 The server listens on:

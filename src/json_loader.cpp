@@ -59,8 +59,7 @@ LoadedGame LoadGame(const std::filesystem::path& json_path) {
         dog_retirement_seconds = json::value_to<double>(it->value());
     }
     loaded_game.game.SetDogRetirementTime(
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::duration<double>(dog_retirement_seconds)));
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(dog_retirement_seconds)));
 
     if (auto it_maps = json_obj.find("maps"); it_maps != json_obj.end()) {
         for (const auto& map_val : it_maps->value().as_array()) {
@@ -82,10 +81,9 @@ model::Game::LootGeneratorConfig LoadLootGeneratorConfig(const json::object& roo
     if (period_seconds <= 0.0) {
         throw std::runtime_error("lootGeneratorConfig.period must be greater than zero");
     }
-    return {
-        std::chrono::duration_cast<loot_gen::LootGenerator::TimeInterval>(
-            std::chrono::duration<double>(period_seconds)),
-        probability};
+    return {std::chrono::duration_cast<loot_gen::LootGenerator::TimeInterval>(
+                std::chrono::duration<double>(period_seconds)),
+            probability};
 }
 
 LoadedMapData LoadMap(const json::object& map_obj, double default_dog_speed, size_t default_bag_capacity) {
@@ -105,13 +103,7 @@ LoadedMapData LoadMap(const json::object& map_obj, double default_dog_speed, siz
         throw std::runtime_error("Map " + id + " must contain at least one loot type");
     }
 
-    model::Map map(
-        model::Map::Id{id},
-        name,
-        dog_speed,
-        loot_types.size(),
-        bag_capacity,
-        LoadLootValues(loot_types));
+    model::Map map(model::Map::Id{id}, name, dog_speed, loot_types.size(), bag_capacity, LoadLootValues(loot_types));
     LoadRoads(map, map_obj);
     LoadBuildings(map, map_obj);
     LoadOffices(map, map_obj);

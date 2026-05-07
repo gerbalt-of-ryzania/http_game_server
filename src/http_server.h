@@ -23,18 +23,16 @@ namespace http = beast::http;
 void ReportError(beast::error_code ec, std::string_view what);
 
 class SessionBase {
-public:
+   public:
     SessionBase(const SessionBase&) = delete;
     SessionBase& operator=(const SessionBase&) = delete;
 
     void Run();
 
-protected:
+   protected:
     using HttpRequest = http::request<http::string_body>;
 
-    explicit SessionBase(tcp::socket&& socket)
-        : stream_(std::move(socket)) {
-    }
+    explicit SessionBase(tcp::socket&& socket) : stream_(std::move(socket)) {}
 
     ~SessionBase() = default;
 
@@ -49,13 +47,13 @@ protected:
                           });
     }
 
-protected:
+   protected:
     void Read();
     void OnRead(beast::error_code ec, [[maybe_unused]] std::size_t bytes_read);
     void OnWrite(beast::error_code ec, [[maybe_unused]] std::size_t bytes_written, bool close);
     void Close();
 
-private:
+   private:
     virtual void HandleRequest(HttpRequest&& request) = 0;
 
     virtual std::shared_ptr<SessionBase> GetSharedThis() = 0;
@@ -67,22 +65,19 @@ private:
 
 template <typename RequestHandler>
 class Session : public SessionBase, public std::enable_shared_from_this<Session<RequestHandler>> {
-public:
+   public:
     template <typename Handler>
     Session(tcp::socket&& socket, Handler&& request_handler)
-        : SessionBase(std::move(socket))
-        , request_handler_(std::forward<Handler>(request_handler)) {
-    }
+        : SessionBase(std::move(socket)), request_handler_(std::forward<Handler>(request_handler)) {}
 
-private:
+   private:
     std::shared_ptr<SessionBase> GetSharedThis() override {
         return this->shared_from_this();
     }
 
     void HandleRequest(HttpRequest&& request) override {
-        request_handler_(std::move(request), [self = this->shared_from_this()](auto&& response) {
-            self->Write(std::move(response));
-        });
+        request_handler_(std::move(request),
+                         [self = this->shared_from_this()](auto&& response) { self->Write(std::move(response)); });
     }
 
     RequestHandler request_handler_;
@@ -90,12 +85,10 @@ private:
 
 template <typename RequestHandler>
 class Listener : public std::enable_shared_from_this<Listener<RequestHandler>> {
-public:
+   public:
     template <typename Handler>
     Listener(net::io_context& ioc, const tcp::endpoint& endpoint, Handler&& request_handler)
-        : ioc_(ioc)
-        , acceptor_(net::make_strand(ioc))
-        , request_handler_(std::forward<Handler>(request_handler)) {
+        : ioc_(ioc), acceptor_(net::make_strand(ioc)), request_handler_(std::forward<Handler>(request_handler)) {
         acceptor_.open(endpoint.protocol());
         acceptor_.set_option(net::socket_base::reuse_address(true));
         acceptor_.bind(endpoint);
@@ -106,11 +99,10 @@ public:
         DoAccept();
     }
 
-private:
+   private:
     void DoAccept() {
-        acceptor_.async_accept(
-            net::make_strand(ioc_),
-            beast::bind_front_handler(&Listener::OnAccept, this->shared_from_this()));
+        acceptor_.async_accept(net::make_strand(ioc_),
+                               beast::bind_front_handler(&Listener::OnAccept, this->shared_from_this()));
     }
 
     void OnAccept(beast::error_code ec, tcp::socket socket) {

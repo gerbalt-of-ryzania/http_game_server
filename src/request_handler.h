@@ -41,20 +41,16 @@ struct Endpoints {
 };
 
 class RequestHandler {
-public:
-    explicit RequestHandler(model::Game& game,
-                            const extra_data::MapExtraData& map_extra_data,
-                            postgres::RecordsRepository& records_repository,
-                            fs::path static_root,
-                            ApiStrand api_strand,
+   public:
+    explicit RequestHandler(model::Game& game, const extra_data::MapExtraData& map_extra_data,
+                            postgres::RecordsRepository& records_repository, fs::path static_root, ApiStrand api_strand,
                             bool enable_http_tick = true)
-        : game_{game}
-        , map_extra_data_{map_extra_data}
-        , records_repository_{records_repository}
-        , static_root_{fs::canonical(std::move(static_root))}
-        , api_strand_{std::move(api_strand)}
-        , http_tick_enabled_{enable_http_tick} {
-    }
+        : game_{game},
+          map_extra_data_{map_extra_data},
+          records_repository_{records_repository},
+          static_root_{fs::canonical(std::move(static_root))},
+          api_strand_{std::move(api_strand)},
+          http_tick_enabled_{enable_http_tick} {}
 
     RequestHandler(const RequestHandler&) = delete;
     RequestHandler& operator=(const RequestHandler&) = delete;
@@ -82,7 +78,7 @@ public:
         return SendFile(req, *file_path, std::forward<Send>(send));
     }
 
-private:
+   private:
     model::Game& game_;
     const extra_data::MapExtraData& map_extra_data_;
     postgres::RecordsRepository& records_repository_;
@@ -127,7 +123,8 @@ private:
             return HandleRecords(std::move(req), std::forward<Send>(send));
         }
         if (req.method() != http::verb::get && req.method() != http::verb::head) {
-            return send(MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Invalid method", "GET, HEAD"));
+            return send(
+                MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Invalid method", "GET, HEAD"));
         }
 
         if (path == Endpoints::Maps) {
@@ -151,7 +148,8 @@ private:
             if (!map) {
                 return send(MakeApiError(req, http::status::not_found, "mapNotFound", "Map not found"));
             }
-            return send(MakeApiJsonResponse(req, http::status::ok, json::serialize(SerializeMap(*map, map_extra_data_))));
+            return send(
+                MakeApiJsonResponse(req, http::status::ok, json::serialize(SerializeMap(*map, map_extra_data_))));
         }
 
         return send(MakeApiError(req, http::status::bad_request, "badRequest", "Invalid endpoint"));
@@ -174,9 +172,7 @@ private:
 
     template <typename Body, typename Allocator>
     static http::response<http::string_body> MakeApiJsonResponse(
-        const http::request<Body, http::basic_fields<Allocator>>& req,
-        http::status status,
-        std::string body) {
+        const http::request<Body, http::basic_fields<Allocator>>& req, http::status status, std::string body) {
         http::response<http::string_body> res{status, req.version()};
         res.set(http::field::content_type, "application/json");
         res.set(http::field::cache_control, "no-cache");
@@ -188,8 +184,7 @@ private:
 
     template <typename Body, typename Allocator>
     static http::response<http::empty_body> MakeApiJsonHeadResponse(
-        const http::request<Body, http::basic_fields<Allocator>>& req,
-        http::status status,
+        const http::request<Body, http::basic_fields<Allocator>>& req, http::status status,
         std::size_t content_length) {
         http::response<http::empty_body> res{status, req.version()};
         res.set(http::field::content_type, "application/json");
@@ -201,9 +196,7 @@ private:
 
     template <typename Body, typename Allocator>
     static http::response<http::string_body> MakeStringResponse(
-        const http::request<Body, http::basic_fields<Allocator>>& req,
-        http::status status,
-        std::string body,
+        const http::request<Body, http::basic_fields<Allocator>>& req, http::status status, std::string body,
         std::string_view content_type = "text/plain") {
         http::response<http::string_body> res{status, req.version()};
         res.set(http::field::content_type, content_type);
@@ -214,12 +207,9 @@ private:
     }
 
     template <typename Body, typename Allocator>
-    static auto MakeApiError(
-        const http::request<Body, http::basic_fields<Allocator>>& req,
-        http::status status,
-        std::string_view code,
-        std::string_view message,
-        std::optional<std::string_view> allow = std::nullopt) {
+    static auto MakeApiError(const http::request<Body, http::basic_fields<Allocator>>& req, http::status status,
+                             std::string_view code, std::string_view message,
+                             std::optional<std::string_view> allow = std::nullopt) {
         json::object obj;
         obj["code"] = std::string(code);
         obj["message"] = std::string(message);
@@ -233,10 +223,12 @@ private:
     template <typename Body, typename Allocator, typename Send>
     void HandleJoinGame(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
         if (req.method() != http::verb::post) {
-            return send(MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Only POST method is expected", "POST"));
+            return send(MakeApiError(req, http::status::method_not_allowed, "invalidMethod",
+                                     "Only POST method is expected", "POST"));
         }
         if (!IsJsonContentType(req)) {
-            return send(MakeApiError(req, http::status::bad_request, "invalidArgument", "Join game request parse error"));
+            return send(
+                MakeApiError(req, http::status::bad_request, "invalidArgument", "Join game request parse error"));
         }
 
         try {
@@ -259,24 +251,28 @@ private:
             response_body["playerId"] = join_result.player_id;
             return send(MakeApiJsonResponse(req, http::status::ok, json::serialize(response_body)));
         } catch (const std::exception&) {
-            return send(MakeApiError(req, http::status::bad_request, "invalidArgument", "Join game request parse error"));
+            return send(
+                MakeApiError(req, http::status::bad_request, "invalidArgument", "Join game request parse error"));
         }
     }
 
     template <typename Body, typename Allocator, typename Send>
     void HandlePlayers(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
         if (req.method() != http::verb::get && req.method() != http::verb::head) {
-            return send(MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Invalid method", "GET, HEAD"));
+            return send(
+                MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Invalid method", "GET, HEAD"));
         }
 
         const auto token = ExtractBearerToken(req);
         if (!token) {
-            return send(MakeApiError(req, http::status::unauthorized, "invalidToken", "Authorization header is missing"));
+            return send(
+                MakeApiError(req, http::status::unauthorized, "invalidToken", "Authorization header is missing"));
         }
 
         const model::Game::Player* current_player = game_.FindPlayerByToken(*token);
         if (!current_player) {
-            return send(MakeApiError(req, http::status::unauthorized, "unknownToken", "Player token has not been found"));
+            return send(
+                MakeApiError(req, http::status::unauthorized, "unknownToken", "Player token has not been found"));
         }
 
         json::object response_body;
@@ -295,17 +291,20 @@ private:
     template <typename Body, typename Allocator, typename Send>
     void HandleGameState(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
         if (req.method() != http::verb::get && req.method() != http::verb::head) {
-            return send(MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Invalid method", "GET, HEAD"));
+            return send(
+                MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Invalid method", "GET, HEAD"));
         }
 
         const auto token = ExtractBearerToken(req);
         if (!token) {
-            return send(MakeApiError(req, http::status::unauthorized, "invalidToken", "Authorization header is required"));
+            return send(
+                MakeApiError(req, http::status::unauthorized, "invalidToken", "Authorization header is required"));
         }
 
         const model::Game::Player* current_player = game_.FindPlayerByToken(*token);
         if (!current_player) {
-            return send(MakeApiError(req, http::status::unauthorized, "unknownToken", "Player token has not been found"));
+            return send(
+                MakeApiError(req, http::status::unauthorized, "unknownToken", "Player token has not been found"));
         }
 
         json::object response_body;
@@ -364,11 +363,13 @@ private:
 
         const auto token = ExtractBearerToken(req);
         if (!token) {
-            return send(MakeApiError(req, http::status::unauthorized, "invalidToken", "Authorization header is required"));
+            return send(
+                MakeApiError(req, http::status::unauthorized, "invalidToken", "Authorization header is required"));
         }
 
         if (!game_.FindPlayerByToken(*token)) {
-            return send(MakeApiError(req, http::status::unauthorized, "unknownToken", "Player token has not been found"));
+            return send(
+                MakeApiError(req, http::status::unauthorized, "unknownToken", "Player token has not been found"));
         }
 
         std::string move_str;
@@ -399,7 +400,8 @@ private:
             return send(MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Invalid method", "POST"));
         }
         if (!IsJsonContentType(req)) {
-            return send(MakeApiError(req, http::status::bad_request, "invalidArgument", "Failed to parse tick request JSON"));
+            return send(
+                MakeApiError(req, http::status::bad_request, "invalidArgument", "Failed to parse tick request JSON"));
         }
 
         int64_t time_delta_ms = 0;
@@ -412,14 +414,16 @@ private:
             } else if (td.is_uint64()) {
                 const std::uint64_t u = td.as_uint64();
                 if (u > static_cast<std::uint64_t>(std::numeric_limits<int64_t>::max())) {
-                    return send(MakeApiError(req, http::status::bad_request, "invalidArgument", "Invalid timeDelta value"));
+                    return send(
+                        MakeApiError(req, http::status::bad_request, "invalidArgument", "Invalid timeDelta value"));
                 }
                 time_delta_ms = static_cast<int64_t>(u);
             } else {
                 return send(MakeApiError(req, http::status::bad_request, "invalidArgument", "Invalid timeDelta value"));
             }
         } catch (const std::exception&) {
-            return send(MakeApiError(req, http::status::bad_request, "invalidArgument", "Failed to parse tick request JSON"));
+            return send(
+                MakeApiError(req, http::status::bad_request, "invalidArgument", "Failed to parse tick request JSON"));
         }
 
         if (time_delta_ms < 0) {
@@ -433,7 +437,8 @@ private:
     template <typename Body, typename Allocator, typename Send>
     void HandleRecords(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send) {
         if (req.method() != http::verb::get && req.method() != http::verb::head) {
-            return send(MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Invalid method", "GET, HEAD"));
+            return send(
+                MakeApiError(req, http::status::method_not_allowed, "invalidMethod", "Invalid method", "GET, HEAD"));
         }
 
         std::size_t start = 0;
@@ -442,7 +447,8 @@ private:
             return send(MakeApiError(req, http::status::bad_request, "invalidArgument", "Invalid query parameters"));
         }
         if (max_items > 100) {
-            return send(MakeApiError(req, http::status::bad_request, "invalidArgument", "maxItems must not exceed 100"));
+            return send(
+                MakeApiError(req, http::status::bad_request, "invalidArgument", "maxItems must not exceed 100"));
         }
 
         json::array arr;
@@ -519,14 +525,14 @@ private:
             return false;
         }
         std::string lower(value);
-        std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char ch) {
-            return static_cast<char>(std::tolower(ch));
-        });
+        std::transform(lower.begin(), lower.end(), lower.begin(),
+                       [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
         return lower == "application/json" || lower.starts_with("application/json;");
     }
 
     template <typename Body, typename Allocator>
-    static std::optional<std::string> ExtractBearerToken(const http::request<Body, http::basic_fields<Allocator>>& req) {
+    static std::optional<std::string> ExtractBearerToken(
+        const http::request<Body, http::basic_fields<Allocator>>& req) {
         const auto auth = req[http::field::authorization];
         if (auth.empty()) {
             return std::nullopt;
@@ -551,11 +557,8 @@ private:
     }
 
     template <typename Body, typename Allocator, typename Send>
-    static void SendPlainText(
-        const http::request<Body, http::basic_fields<Allocator>>& req,
-        http::status status,
-        std::string_view text,
-        Send&& send) {
+    static void SendPlainText(const http::request<Body, http::basic_fields<Allocator>>& req, http::status status,
+                              std::string_view text, Send&& send) {
         if (req.method() == http::verb::head) {
             http::response<http::empty_body> res{status, req.version()};
             res.set(http::field::content_type, "text/plain");
@@ -569,10 +572,8 @@ private:
     }
 
     template <typename Body, typename Allocator, typename Send>
-    static void SendFile(
-        const http::request<Body, http::basic_fields<Allocator>>& req,
-        const fs::path& path,
-        Send&& send) {
+    static void SendFile(const http::request<Body, http::basic_fields<Allocator>>& req, const fs::path& path,
+                         Send&& send) {
         beast::error_code ec;
         http::file_body::value_type file;
         file.open(path.string().c_str(), beast::file_mode::scan, ec);
@@ -682,9 +683,8 @@ private:
 
     static std::string_view GetMimeType(std::string_view extension) {
         std::string lowercase_extension(extension);
-        std::transform(lowercase_extension.begin(), lowercase_extension.end(), lowercase_extension.begin(), [](unsigned char ch) {
-            return static_cast<char>(std::tolower(ch));
-        });
+        std::transform(lowercase_extension.begin(), lowercase_extension.end(), lowercase_extension.begin(),
+                       [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
 
         if (lowercase_extension == ".htm" || lowercase_extension == ".html") {
             return "text/html";

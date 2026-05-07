@@ -49,8 +49,7 @@ void MergeIntervals(std::vector<std::pair<double, double>>& intervals) {
 }
 
 template <typename PrimaryCoordFn, typename SecondaryCoordFn>
-std::vector<std::pair<double, double>> CollectIntervals(const Map& map,
-                                                        double fixed_coord,
+std::vector<std::pair<double, double>> CollectIntervals(const Map& map, double fixed_coord,
                                                         PrimaryCoordFn get_primary_coord,
                                                         SecondaryCoordFn get_secondary_coord) {
     std::vector<std::pair<double, double>> intervals;
@@ -81,15 +80,13 @@ std::vector<std::pair<double, double>> CollectIntervals(const Map& map,
 
 std::vector<std::pair<double, double>> CollectXIntervals(const Map& map, double y) {
     return CollectIntervals(
-        map, y,
-        [](const Point& point) { return static_cast<double>(point.x); },
+        map, y, [](const Point& point) { return static_cast<double>(point.x); },
         [](const Point& point) { return static_cast<double>(point.y); });
 }
 
 std::vector<std::pair<double, double>> CollectYIntervals(const Map& map, double x) {
     return CollectIntervals(
-        map, x,
-        [](const Point& point) { return static_cast<double>(point.y); },
+        map, x, [](const Point& point) { return static_cast<double>(point.y); },
         [](const Point& point) { return static_cast<double>(point.x); });
 }
 
@@ -103,11 +100,8 @@ std::optional<std::pair<double, double>> FindIntervalContaining(const std::vecto
     return std::nullopt;
 }
 
-MoveResult ApplyAxisMove(double& coord_along_motion,
-                         double vel,
-                         double dt,
-                         const std::vector<std::pair<double, double>>& intervals_along_axis,
-                         Vec2& speed_out) {
+MoveResult ApplyAxisMove(double& coord_along_motion, double vel, double dt,
+                         const std::vector<std::pair<double, double>>& intervals_along_axis, Vec2& speed_out) {
     if (vel == 0.0) {
         return {};
     }
@@ -127,9 +121,8 @@ MoveResult ApplyAxisMove(double& coord_along_motion,
     coord_along_motion = clamped;
 
     const bool target_was_clamped = std::fabs(clamped - target) > kEps;
-    const bool reached_road_end = !target_was_clamped &&
-                                  ((vel > 0.0 && std::fabs(clamped - hi) <= kEps) ||
-                                   (vel < 0.0 && std::fabs(clamped - lo) <= kEps));
+    const bool reached_road_end = !target_was_clamped && ((vel > 0.0 && std::fabs(clamped - hi) <= kEps) ||
+                                                          (vel < 0.0 && std::fabs(clamped - lo) <= kEps));
 
     if (target_was_clamped || reached_road_end) {
         speed_out = {0.0, 0.0};
@@ -143,13 +136,12 @@ MoveResult ApplyAxisMove(double& coord_along_motion,
     return {};
 }
 
-
 geom::Point2D ToPoint2D(Vec2 point) {
     return {point.x, point.y};
 }
 
 class GatheringProvider : public collision_detector::ItemGathererProvider {
-public:
+   public:
     struct ItemInfo {
         enum class Kind {
             LostObject,
@@ -161,10 +153,8 @@ public:
         collision_detector::Item item;
     };
 
-    GatheringProvider(const std::vector<Game::LostObject>& lost_objects,
-                      const Map::Offices& offices,
-                      const std::vector<Game::Player*>& players,
-                      const std::vector<Vec2>& start_positions)
+    GatheringProvider(const std::vector<Game::LostObject>& lost_objects, const Map::Offices& offices,
+                      const std::vector<Game::Player*>& players, const std::vector<Vec2>& start_positions)
         : players_(players) {
         items_.reserve(lost_objects.size() + offices.size());
         gatherers_.reserve(players.size());
@@ -217,16 +207,14 @@ public:
         return *players_.at(idx);
     }
 
-private:
+   private:
     std::vector<ItemInfo> items_;
     std::vector<collision_detector::Gatherer> gatherers_;
     std::vector<Game::Player*> players_;
 };
 
-void ProcessGatheringEvents(std::vector<Game::LostObject>& lost_objects,
-                            const Map& map,
-                            const std::vector<Game::Player*>& players,
-                            const std::vector<Vec2>& start_positions) {
+void ProcessGatheringEvents(std::vector<Game::LostObject>& lost_objects, const Map& map,
+                            const std::vector<Game::Player*>& players, const std::vector<Vec2>& start_positions) {
     if (players.empty() || (lost_objects.empty() && map.GetOffices().empty())) {
         return;
     }
@@ -260,14 +248,11 @@ void ProcessGatheringEvents(std::vector<Game::LostObject>& lost_objects,
         return;
     }
 
-    lost_objects.erase(
-        std::remove_if(
-            lost_objects.begin(),
-            lost_objects.end(),
-            [&collected_lost_object_ids](const Game::LostObject& lost_object) {
-                return collected_lost_object_ids.contains(lost_object.id);
-            }),
-        lost_objects.end());
+    lost_objects.erase(std::remove_if(lost_objects.begin(), lost_objects.end(),
+                                      [&collected_lost_object_ids](const Game::LostObject& lost_object) {
+                                          return collected_lost_object_ids.contains(lost_object.id);
+                                      }),
+                       lost_objects.end());
 }
 
 }  // namespace
@@ -383,10 +368,8 @@ Game::JoinResult Game::JoinGame(const std::string& user_name, const Map::Id& map
     }
 
     std::uniform_int_distribution<unsigned> distribution(0, 15);
-    static constexpr std::array<char, 16> hex_digits{
-        '0', '1', '2', '3', '4', '5', '6', '7',
-        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-    };
+    static constexpr std::array<char, 16> hex_digits{'0', '1', '2', '3', '4', '5', '6', '7',
+                                                     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
     std::string token(32, '0');
     do {
@@ -396,19 +379,9 @@ Game::JoinResult Game::JoinGame(const std::string& user_name, const Map::Id& map
     } while (token_to_player_index_.contains(token));
 
     const PlayerId player_id = next_player_id_++;
-    const Vec2 spawn =
-        randomize_spawn_points_ ? SpawnAtRandomRoadPoint(*map) : SpawnAtFirstRoadStart(*map);
+    const Vec2 spawn = randomize_spawn_points_ ? SpawnAtRandomRoadPoint(*map) : SpawnAtFirstRoadStart(*map);
 
-    Player player{
-        player_id,
-        user_name,
-        token,
-        map_id,
-        spawn,
-        Vec2{},
-        Direction::NORTH,
-        map->GetBagCapacity()
-    };
+    Player player{player_id, user_name, token, map_id, spawn, Vec2{}, Direction::NORTH, map->GetBagCapacity()};
 
     player.join_time_ms = current_time_ms_;
     player.stopped_since_ms = current_time_ms_;
@@ -547,12 +520,8 @@ void Game::Tick(int64_t time_delta_ms) {
         ProcessGatheringEvents(map_lost_objects, map, map_players, map_start_positions);
 
         lost_objects_.erase(
-            std::remove_if(
-                lost_objects_.begin(),
-                lost_objects_.end(),
-                [&map](const LostObject& lost_object) {
-                    return lost_object.map_id == map.GetId();
-                }),
+            std::remove_if(lost_objects_.begin(), lost_objects_.end(),
+                           [&map](const LostObject& lost_object) { return lost_object.map_id == map.GetId(); }),
             lost_objects_.end());
         lost_objects_.insert(lost_objects_.end(), map_lost_objects.begin(), map_lost_objects.end());
     }
@@ -632,11 +601,8 @@ void Game::RetirePlayer(Player& player, std::int64_t retire_time_ms) {
     }
 
     if (records_repository_) {
-        records_repository_->Save({
-            player.name,
-            static_cast<std::uint64_t>(player.score),
-            retire_time_ms - player.join_time_ms
-        });
+        records_repository_->Save(
+            {player.name, static_cast<std::uint64_t>(player.score), retire_time_ms - player.join_time_ms});
     }
 
     token_to_player_index_.erase(player.token);

@@ -1,0 +1,5 @@
+/home/nafan/http_game_server/build/CMakeFiles/game_server.dir
+/home/nafan/http_game_server/build/CMakeFiles/game_server_tests.dir
+/home/nafan/http_game_server/build/CMakeFiles/test.dir
+/home/nafan/http_game_server/build/CMakeFiles/edit_cache.dir
+/home/nafan/http_game_server/build/CMakeFiles/rebuild_cache.dir

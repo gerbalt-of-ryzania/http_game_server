@@ -6,8 +6,7 @@
 
 namespace postgres {
 
-RecordsRepository::RecordsRepository(std::string db_url)
-    : db_url_(std::move(db_url)) {
+RecordsRepository::RecordsRepository(std::string db_url) : db_url_(std::move(db_url)) {
     InitDatabase();
 }
 
@@ -41,9 +40,7 @@ void RecordsRepository::Save(const RetiredPlayerRecord& record) {
             INSERT INTO retired_players (name, score, play_time_ms)
             VALUES ($1, $2, $3);
         )",
-        record.name,
-        record.score,
-        record.play_time_ms);
+        record.name, record.score, record.play_time_ms);
 
     tx.commit();
 }
@@ -60,8 +57,7 @@ std::vector<RetiredPlayerRecord> RecordsRepository::GetRecords(std::size_t start
             OFFSET $1
             LIMIT $2;
         )",
-        start,
-        max_items);
+        start, max_items);
 
     std::vector<RetiredPlayerRecord> records;
     records.reserve(result.size());

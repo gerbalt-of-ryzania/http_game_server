@@ -40,7 +40,8 @@ bool IsPointOnAnyRoad(const model::Map& map, model::Vec2 point) {
 }
 
 model::Map MakeMap(size_t loot_types_count = 2) {
-    model::Map map(model::Map::Id{"map1"}, "Map 1", 1.0, loot_types_count, 3, std::vector<size_t>(loot_types_count, 10));
+    model::Map map(model::Map::Id{"map1"}, "Map 1", 1.0, loot_types_count, 3,
+                   std::vector<size_t>(loot_types_count, 10));
     map.AddRoad(model::Road(model::Road::HORIZONTAL, {0, 0}, 10));
     map.AddRoad(model::Road(model::Road::VERTICAL, {10, 0}, 10));
     return map;

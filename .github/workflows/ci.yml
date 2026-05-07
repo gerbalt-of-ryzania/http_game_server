@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test-lint:
+    name: Configure, build, test, and lint
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-format \
+            clang-tidy \
+            cmake \
+            g++ \
+            python3-pip
+
+      - name: Install Conan
+        run: pip3 install "conan==1.*"
+
+      - name: Configure Conan profile
+        run: |
+          conan profile new default --detect --force
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+
+      - name: Install Conan dependencies
+        run: |
+          mkdir -p build
+          conan install . \
+            --install-folder build \
+            -s build_type=Release \
+            -s compiler.libcxx=libstdc++11 \
+            --build=missing
+
+      - name: CMake configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: CMake build
+        run: cmake --build build --parallel 2
+
+      - name: CTest
+        run: ctest --test-dir build --output-on-failure
+
+      - name: clang-format check
+        run: |
+          find src tests \
+            \( -name '*.cpp' -o -name '*.h' \) \
+            -print0 | xargs -0 clang-format --dry-run --Werror
+
+      - name: clang-tidy
+        run: |
+          find src tests \
+            -name '*.cpp' \
+            -print0 | xargs -0 clang-tidy -p build
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t game-server:ci .

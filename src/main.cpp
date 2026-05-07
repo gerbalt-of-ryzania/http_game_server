@@ -46,13 +46,12 @@ void RunWorkers(unsigned n, const Fn& fn) {
 }
 
 std::string_view HelpText() {
-    return
-        "Allowed options:\n"
-        "  -h [ --help ]                    produce help message\n"
-        "  -t [ --tick-period ] arg         set tick period\n"
-        "  -c [ --config-file ] arg         set config file path\n"
-        "  -w [ --www-root ] arg            set static files root\n"
-        "  --randomize-spawn-points         spawn dogs at random positions\n";
+    return "Allowed options:\n"
+           "  -h [ --help ]                    produce help message\n"
+           "  -t [ --tick-period ] arg         set tick period\n"
+           "  -c [ --config-file ] arg         set config file path\n"
+           "  -w [ --www-root ] arg            set static files root\n"
+           "  --randomize-spawn-points         spawn dogs at random positions\n";
 }
 
 std::string RequireOptionValue(int& index, int argc, const char* argv[], std::string_view option_name) {
@@ -172,25 +171,22 @@ int main(int argc, const char* argv[]) {
             std::function<void()> schedule_tick;
             schedule_tick = [timer, &game, tick_period_ms, api_strand, &schedule_tick]() {
                 timer->expires_after(std::chrono::milliseconds(tick_period_ms));
-                timer->async_wait([timer, &game, tick_period_ms, api_strand, &schedule_tick](
-                                        boost::system::error_code ec) {
-                    if (ec) {
-                        return;
-                    }
-                    net::dispatch(api_strand, [&game, tick_period_ms]() {
-                        game.Tick(static_cast<int64_t>(tick_period_ms));
+                timer->async_wait(
+                    [timer, &game, tick_period_ms, api_strand, &schedule_tick](boost::system::error_code ec) {
+                        if (ec) {
+                            return;
+                        }
+                        net::dispatch(api_strand,
+                                      [&game, tick_period_ms]() { game.Tick(static_cast<int64_t>(tick_period_ms)); });
+                        schedule_tick();
                     });
-                    schedule_tick();
-                });
             };
             schedule_tick();
         }
 
         std::cout << "Server has started..."sv << std::endl;
 
-        RunWorkers(std::max(1u, num_threads), [&ioc] {
-            ioc.run();
-        });
+        RunWorkers(std::max(1u, num_threads), [&ioc] { ioc.run(); });
     } catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;
         return EXIT_FAILURE;

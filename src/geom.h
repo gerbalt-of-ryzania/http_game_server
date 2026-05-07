@@ -6,10 +6,7 @@ namespace geom {
 
 struct Vec2D {
     Vec2D() = default;
-    Vec2D(double x, double y)
-        : x(x)
-        , y(y) {
-    }
+    Vec2D(double x, double y) : x(x), y(y) {}
 
     Vec2D& operator*=(double scale) {
         x *= scale;
@@ -33,10 +30,7 @@ inline Vec2D operator*(double lhs, Vec2D rhs) {
 
 struct Point2D {
     Point2D() = default;
-    Point2D(double x, double y)
-        : x(x)
-        , y(y) {
-    }
+    Point2D(double x, double y) : x(x), y(y) {}
 
     Point2D& operator+=(const Vec2D& rhs) {
         x += rhs.x;
