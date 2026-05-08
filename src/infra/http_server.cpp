@@ -1,12 +1,16 @@
 #include "http_server.h"
 
+#include "logger.h"
+
 #include <boost/asio/dispatch.hpp>
-#include <iostream>
 
 namespace http_server {
 
 void ReportError(beast::error_code ec, std::string_view what) {
-    std::cerr << what << ": " << ec.message() << std::endl;
+    infra::log::Error("http_io_error", {
+                                           {"where", std::string(what)},
+                                           {"message", ec.message()},
+                                       });
 }
 
 void SessionBase::Run() {
@@ -47,7 +51,7 @@ void SessionBase::Close() {
     try {
         stream_.socket().shutdown(tcp::socket::shutdown_send);
     } catch (const std::exception& e) {
-        std::cerr << "shutdown error: " << e.what() << std::endl;
+        infra::log::Error("http_shutdown_failed", {{"message", e.what()}});
     }
 }
 

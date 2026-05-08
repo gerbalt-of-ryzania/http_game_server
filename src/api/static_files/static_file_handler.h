@@ -1,6 +1,7 @@
 #pragma once
 
 #include "responses.h"
+#include "request_context.h"
 
 #include <algorithm>
 #include <cctype>
@@ -22,32 +23,33 @@ class StaticFileHandler {
     explicit StaticFileHandler(fs::path static_root) : static_root_{fs::canonical(std::move(static_root))} {}
 
     template <typename Body, typename Allocator, typename Send>
-    void Handle(const http::request<Body, http::basic_fields<Allocator>>& req, std::string_view path,
-                Send&& send) const {
+    void Handle(const api::RequestContext& ctx, const http::request<Body, http::basic_fields<Allocator>>& req,
+                std::string_view path, Send&& send) const {
         if (req.method() != http::verb::get && req.method() != http::verb::head) {
-            return responses::SendPlainText(req, http::status::method_not_allowed, "Method not allowed",
+            return responses::SendPlainText(ctx, req, http::status::method_not_allowed, "Method not allowed",
                                             std::forward<Send>(send));
         }
 
         auto file_path = ResolveStaticPath(path);
         if (!file_path) {
-            return responses::SendPlainText(req, http::status::bad_request, "Bad request", std::forward<Send>(send));
+            return responses::SendPlainText(ctx, req, http::status::bad_request, "Bad request",
+                                            std::forward<Send>(send));
         }
 
-        SendFile(req, *file_path, std::forward<Send>(send));
+        SendFile(ctx, req, *file_path, std::forward<Send>(send));
     }
 
    private:
     fs::path static_root_;
 
     template <typename Body, typename Allocator, typename Send>
-    static void SendFile(const http::request<Body, http::basic_fields<Allocator>>& req, const fs::path& path,
-                         Send&& send) {
+    static void SendFile(const api::RequestContext& ctx, const http::request<Body, http::basic_fields<Allocator>>& req,
+                         const fs::path& path, Send&& send) {
         beast::error_code ec;
         http::file_body::value_type file;
         file.open(path.string().c_str(), beast::file_mode::scan, ec);
         if (ec) {
-            responses::SendPlainText(req, http::status::not_found, "File not found", std::forward<Send>(send));
+            responses::SendPlainText(ctx, req, http::status::not_found, "File not found", std::forward<Send>(send));
             return;
         }
 
@@ -57,17 +59,21 @@ class StaticFileHandler {
         if (req.method() == http::verb::head) {
             http::response<http::empty_body> res{http::status::ok, req.version()};
             res.set(http::field::content_type, responses::ToBeastStringView(content_type));
+            responses::SetRequestId(res, ctx);
             res.content_length(file_size);
             res.keep_alive(req.keep_alive());
+            responses::LogCompleted(ctx, http::status::ok);
             send(std::move(res));
             return;
         }
 
         http::response<http::file_body> res{http::status::ok, req.version()};
         res.set(http::field::content_type, responses::ToBeastStringView(content_type));
+        responses::SetRequestId(res, ctx);
         res.content_length(file_size);
         res.keep_alive(req.keep_alive());
         res.body() = std::move(file);
+        responses::LogCompleted(ctx, http::status::ok);
         send(std::move(res));
     }
 

@@ -20,6 +20,7 @@
 
 #include "http_server.h"
 #include "json_loader.h"
+#include "logger.h"
 #include "request_handler.h"
 
 using namespace std::literals;
@@ -104,7 +105,7 @@ int main(int argc, const char* argv[]) {
     try {
         args = ParseCommandLine(argc, argv);
     } catch (const std::exception& ex) {
-        std::cerr << ex.what() << std::endl;
+        infra::log::Error("startup_failed", {{"message", ex.what()}});
         return EXIT_FAILURE;
     }
 
@@ -114,7 +115,7 @@ int main(int argc, const char* argv[]) {
     }
 
     if (args.config_path.empty() || args.www_root.empty()) {
-        std::cerr << "Options --config-file and --www-root are required" << std::endl;
+        infra::log::Error("startup_failed", {{"message", "Options --config-file and --www-root are required"}});
         return EXIT_FAILURE;
     }
 
@@ -126,7 +127,7 @@ int main(int argc, const char* argv[]) {
     if (tick_timer_enabled) {
         tick_period_ms = *args.tick_period_ms;
         if (tick_period_ms == 0) {
-            std::cerr << "tick-period must be greater than zero" << std::endl;
+            infra::log::Error("startup_failed", {{"message", "tick-period must be greater than zero"}});
             return EXIT_FAILURE;
         }
     }
@@ -134,7 +135,7 @@ int main(int argc, const char* argv[]) {
     try {
         const char* db_url = std::getenv("GAME_DB_URL");
         if (!db_url) {
-            std::cerr << "GAME_DB_URL environment variable is not set" << std::endl;
+            infra::log::Error("startup_failed", {{"message", "GAME_DB_URL environment variable is not set"}});
             return EXIT_FAILURE;
         }
 
@@ -151,7 +152,7 @@ int main(int argc, const char* argv[]) {
         net::signal_set signals(ioc, SIGINT, SIGTERM);
         signals.async_wait([&ioc](const boost::system::error_code& ec, int signal_number) {
             if (!ec) {
-                std::cout << "Signal " << signal_number << " received, stopping..." << std::endl;
+                infra::log::Info("server_stopping", {{"signal", signal_number}});
                 ioc.stop();
             }
         });
@@ -185,11 +186,15 @@ int main(int argc, const char* argv[]) {
             schedule_tick();
         }
 
-        std::cout << "Server has started..."sv << std::endl;
+        infra::log::Info("server_started", {
+                                               {"address", address},
+                                               {"port", port},
+                                               {"tick_mode", tick_timer_enabled ? "automatic" : "manual"},
+                                           });
 
         RunWorkers(std::max(1u, num_threads), [&ioc] { ioc.run(); });
     } catch (const std::exception& ex) {
-        std::cerr << ex.what() << std::endl;
+        infra::log::Error("runtime_failed", {{"message", ex.what()}});
         return EXIT_FAILURE;
     }
 }

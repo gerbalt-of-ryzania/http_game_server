@@ -36,6 +36,8 @@ set(GAME_SERVER_SOURCES
     src/domain/game/extra_data.cpp
     src/storage/records_repository.h
     src/storage/records_repository.cpp
+    src/storage/connection_pool.h
+    src/storage/connection_pool.cpp
     src/api/middleware/request_utils.h
     src/api/middleware/request_utils.cpp
     src/api/serializers/game_serializers.h
@@ -44,6 +46,12 @@ set(GAME_SERVER_SOURCES
     src/api/handlers/responses.h
     src/api/handlers/request_handler.cpp
     src/api/handlers/request_handler.h
+    src/infra/logger.h
+    src/infra/logger.cpp
+    src/infra/request_id.h
+    src/infra/request_id.cpp
+    src/api/request_context.h
+
 )
 
 add_executable(game_server
@@ -52,6 +60,7 @@ add_executable(game_server
 )
 target_include_directories(game_server PRIVATE
     src
+    src/api
     src/api/handlers
     src/api/middleware
     src/api/serializers
@@ -73,6 +82,7 @@ add_executable(game_server_tests
 )
 target_include_directories(game_server_tests PRIVATE
     src
+    src/api
     src/api/handlers
     src/api/middleware
     src/api/serializers
